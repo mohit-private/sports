@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: radial-gradient(1200px 600px at 50% -10%, #d1fae5 0%, #f5f7fa 45%, #c3cfe2 100%);
+  color: #0f172a;
+  min-height: 100vh;
+}
+
+html.dark,
+html.dark body {
+  background:
+    radial-gradient(1100px 520px at 50% -10%, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0) 60%),
+    #0b1120;
+  color: #e2e8f0;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: rgba(51, 65, 85, 0.5);
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Dark-mode form controls without threading dark: through every input. */
+html.dark input[type='text'],
+html.dark input[type='search'],
+html.dark input[type='email'],
+html.dark input[type='number'],
+html.dark input[type='url'],
+html.dark input[type='password'],
+html.dark input[type='datetime-local'],
+html.dark input:not([type]),
+html.dark select,
+html.dark textarea {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+  color-scheme: dark;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b;
+}
+html.dark select option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+/* Reusable surface tokens. */
+.card {
+  @apply rounded-2xl border bg-white/80 backdrop-blur shadow-sm border-slate-200;
+}
+html.dark .card {
+  @apply bg-slate-900/70 border-slate-800;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 180ms ease-out; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   World Cup imagery + immersive layout.
+   Photos are layered OVER gradients so the design still looks great if an
+   image fails to load (the gradient always renders). Swap the URLs freely.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Branded top header band. */
+.app-header {
+  background:
+    linear-gradient(120deg, rgba(5, 150, 105, 0.96) 0%, rgba(13, 148, 136, 0.94) 55%, rgba(15, 118, 110, 0.96) 100%),
+    url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=1600&q=70');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Big landing hero with a stadium/crowd photo behind a dark emerald wash. */
+.hero-stadium {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(2, 44, 34, 0.78) 0%, rgba(4, 78, 56, 0.72) 45%, rgba(6, 95, 70, 0.85) 100%),
+    url('https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=1920&q=75');
+  background-size: cover;
+  background-position: center;
+  color: #f0fdf4;
+}
+
+/* Pitch-stripe accent used on cards/banners. */
+.pitch-stripes {
+  background-image: repeating-linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0 48px, transparent 48px 96px);
+}
+
+/* A photo tile (action shot) with a soft gradient veil for captions. */
+.photo-tile {
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+.photo-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0) 30%, rgba(2, 6, 23, 0.72) 100%);
+}
+
+/* Subtle floating animation for the trophy/ball flourishes. */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 4s ease-in-out infinite; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Knockout bracket layout — round columns joined by connector elbows.
+   Each round is a flex column distributed with space-around; the connector
+   column between two rounds draws a right-facing "}" that merges each pair of
+   feeder matches into the single match that follows.
+   ────────────────────────────────────────────────────────────────────────── */
+.bracket-scroll { overflow-x: auto; padding-bottom: 8px; }
+.bracket {
+  --bkt-line: #cbd5e1;
+  display: flex;
+  align-items: stretch;
+  min-width: max-content;
+}
+html.dark .bracket { --bkt-line: #334155; }
+
+.bkt-round {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  min-width: 220px;
+}
+.bkt-round--final { justify-content: center; }
+
+.bkt-match { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; }
+
+/* Connector column: one elbow per next-round match, each spanning a pair. */
+.bkt-connector {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 28px;
+  flex: none;
+}
+.bkt-elbow { flex: 1 1 0; display: flex; align-items: center; }
+.bkt-elbow > span {
+  display: block;
+  width: 100%;
+  height: 55%;
+  border-right: 2px solid var(--bkt-line);
+  border-top: 2px solid var(--bkt-line);
+  border-bottom: 2px solid var(--bkt-line);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+/* Mirrored elbow for the right half of a centred bracket (opens left). */
+.bkt-elbow--left > span {
+  border-right: none;
+  border-left: 2px solid var(--bkt-line);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+.bracket--mirror { justify-content: center; }
+
+/* Centre "champion" spotlight — gold-rimmed card over a celebratory wash. */
+.final-spotlight {
+  border: 2px solid rgba(251, 191, 36, 0.85);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.25);
+  background:
+    linear-gradient(180deg, rgba(4, 47, 46, 0.92), rgba(6, 78, 59, 0.92)),
+    url('https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=600&q=70');
+  background-size: cover;
+  background-position: center;
+}
