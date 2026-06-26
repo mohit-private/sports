@@ -23,19 +23,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
       paid = !!player?.paid;
       const byCode = new Map(allPools.map((p) => [p.code, p]));
-      pools = memberships.map((m) => {
-        const pool = byCode.get(m.pool_code);
-        const { prize, currency } = poolEconomics(pool || { code: m.pool_code, name: m.pool_code }, t);
-        return {
-          code: m.pool_code,
-          name: pool?.name || m.pool_code,
-          fee: prize,
-          currency,
-          status: m.status,
-          unlocked: m.unlocked,
-          submittedAt: m.submitted_at,
-        };
-      });
+      pools = memberships
+        .filter((m) => byCode.has(m.pool_code)) // skip entries for deleted pools
+        .map((m) => {
+          const pool = byCode.get(m.pool_code)!;
+          const { prize, currency } = poolEconomics(pool, t);
+          return {
+            code: m.pool_code,
+            name: pool.name,
+            fee: prize,
+            currency,
+            status: m.status,
+            unlocked: m.unlocked,
+            submittedAt: m.submitted_at,
+          };
+        });
     } catch {
       /* DB hiccup — return identity only */
     }

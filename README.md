@@ -118,7 +118,7 @@ Password-protected (`ADMIN_PASSWORD`):
 - **Players** — per pool: mark entries paid, see scores. (Never shows picks.)
 - **Pools** — create pools, each with its own entry fee + currency (0 = free).
 - **Finalize** — set the real group standings (autofill from live ESPN) to build
-  the Round of 32.
+  the Round of 32
 - **Results** — tap the actual winners on the bracket as matches finish;
   everyone's standings recompute on save.
 - **Settings** — submission deadline and defaults.

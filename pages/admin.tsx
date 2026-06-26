@@ -195,18 +195,26 @@ function PlayersTab({ pw }: { pw: string }) {
     <div className="card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 text-sm text-slate-500 dark:border-slate-800">
         <span>Pick contents are never shown here — only submission status and scores. You can remove a player and their picks from this pool.</span>
-        <label className="flex items-center gap-2">
-          <span className="text-xs font-semibold uppercase">Pool</span>
-          <select
-            value={pool}
-            onChange={(e) => setPool(e.target.value)}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+        <div className="flex items-center gap-2">
+          <button
+            onClick={load}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
-            {pools.map((p) => (
-              <option key={p.code} value={p.code}>{p.name}</option>
-            ))}
-          </select>
-        </label>
+            ↻ Refresh
+          </button>
+          <label className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase">Pool</span>
+            <select
+              value={pool}
+              onChange={(e) => setPool(e.target.value)}
+              className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            >
+              {pools.map((p) => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
       {err && <div className="p-4 text-sm text-red-600">{err}</div>}
       <div className="overflow-x-auto">

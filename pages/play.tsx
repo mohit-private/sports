@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/router';
 import { Layout } from '@/components/Layout';
 import { PageHero } from '@/components/PageHero';
 import { Bracket } from '@/components/Bracket';
@@ -13,11 +14,13 @@ import { prunePicks, phaseProgress, isComplete, buildBracket } from '@/lib/brack
 import type { Picks } from '@/lib/types';
 
 export default function Play() {
+  const router = useRouter();
   const {
     user, setUser, entry, patchActiveEntry, tournament, prize, currency,
     pools, activePool, activePoolMeta, locked, dbEnabled, loadingSession,
   } = useAppStore();
   const [picks, setPicks] = useState<Picks>({});
+  const urlCode = typeof router.query.code === 'string' ? router.query.code.toUpperCase() : '';
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinErr, setJoinErr] = useState<string | null>(null);
@@ -62,6 +65,17 @@ export default function Play() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, tournament, activePool]);
+
+  // Auto-join from ?code=POOL in URL — fires once the user is signed in and
+  // only if they haven't joined any pool yet.
+  useEffect(() => {
+    if (!user || !dbEnabled || pools.length > 0 || !urlCode || joining) return;
+    setJoining(true);
+    joinAndRefresh(urlCode)
+      .catch((err: any) => setJoinErr(err.message || 'Could not join pool'))
+      .finally(() => setJoining(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, dbEnabled, pools.length, urlCode]);
 
   function onPick(slot: string, teamCode: string) {
     if (!editable || !tournament || !user) return;
@@ -187,9 +201,10 @@ export default function Play() {
             Enter the pool code your organizer gave you. You can join more pools later - each has its
             own bracket.
           </p>
+          {joining && <p className="mt-4 text-sm text-emerald-600">Joining pool…</p>}
           <form onSubmit={joinPool} className="mt-5 flex flex-col items-center gap-2">
             <input
-              value={joinCode}
+              value={joinCode || urlCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="POOL CODE"
               maxLength={20}

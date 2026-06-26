@@ -55,10 +55,6 @@ export function Groups({
     commit(g, next);
   }
 
-  function autofillByRank() {
-    if (readOnly) return;
-    for (const g of tournament.groups) commit(g, [...g.teams].sort(byRank));
-  }
   // Order every group by today's LIVE standings from ESPN (sorted by points →
   // GD). Always available; reseeds the bracket with the current real order.
   async function autofillByStandings() {
@@ -99,13 +95,6 @@ export function Groups({
         </span>
         {!readOnly && (
           <div className="ml-auto flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={autofillByRank}
-              className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700/60 dark:bg-emerald-900/30 dark:text-emerald-300"
-            >
-              ⚡ Reset to FIFA ranking
-            </button>
             <button
               type="button"
               onClick={autofillByStandings}

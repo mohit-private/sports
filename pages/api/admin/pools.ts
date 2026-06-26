@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { requireAdmin } from '@/lib/adminAuth';
-import { getPools, setPools, getPoolEntries, hasDatabase } from '@/lib/db';
+import { getPools, setPools, getPoolEntries, deletePoolEntries, hasDatabase } from '@/lib/db';
 import type { Pool } from '@/lib/db';
 import { isSupportedCurrency, DEFAULT_CURRENCY } from '@/lib/currency';
 
@@ -82,6 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const code = String(req.body?.code || '').trim().toUpperCase();
     const pools = await getPools();
     const next = pools.filter((p) => p.code.toUpperCase() !== code);
+    await deletePoolEntries(code);
     await setPools(next.length ? next : [{ code: 'MAIN', name: 'Main Pool', fee: 0, currency: DEFAULT_CURRENCY }]);
     return res.status(200).json({ ok: true, pools: next });
   }

@@ -300,6 +300,18 @@ export async function deletePlayerEntry(userId: string, poolCode: string): Promi
   }
 }
 
+/** Delete all entries for a pool, then prune any players who no longer belong
+ *  to any pool (no remaining entries). */
+export async function deletePoolEntries(poolCode: string): Promise<void> {
+  await ensureSchema();
+  const sql = getSql();
+  await sql`DELETE FROM entries WHERE pool_code = ${poolCode}`;
+  await sql`
+    DELETE FROM players
+     WHERE user_id NOT IN (SELECT DISTINCT user_id FROM entries)
+  `;
+}
+
 /** Every not-yet-submitted entry across all pools — used to auto-fill a random
  *  bracket on behalf of registered no-shows once the deadline passes. */
 export async function getDraftEntries(): Promise<EntryRow[]> {

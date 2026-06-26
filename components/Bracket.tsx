@@ -1,9 +1,20 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Tournament, Picks, Results, RoundId } from '@/lib/types';
 import { buildBracket, DerivedMatch } from '@/lib/bracket';
 import { suggestion } from '@/lib/insights';
+import { api } from '@/lib/clientApi';
 import { TeamButton } from './TeamButton';
 import { Groups } from './Groups';
+
+/** Group ids whose real standings are LOCKED from the live ESPN source: every
+ *  team in the group has played all its group matches, so the qualifiers and
+ *  their finishing order can no longer change. (A 4-team group = 3 matches
+ *  each.) Pure + client-safe — operates on the shape /api/standings returns. */
+function finalizedGroupIds(standings: { id: string; rows: { played: number }[] }[]): string[] {
+  return standings
+    .filter((g) => g.rows.length >= 2 && g.rows.every((r) => r.played >= g.rows.length - 1))
+    .map((g) => g.id);
+}
 
 // The full prediction surface: the group stage (pick the top 2 of each group)
 // followed by the knockout bracket, drawn as a real left-to-right tree. The
@@ -33,6 +44,25 @@ export function Bracket({
 }) {
   const bracket = useMemo(() => buildBracket(tournament, picks), [tournament, picks]);
   const teamOf = (code: string | null) => (code ? tournament.teams[code] || null : null);
+
+  // Which groups are finalized, straight from the live ESPN standings. We poll
+  // /api/standings (cached server-side) once on mount; on any failure the strip
+  // simply doesn't render. Order chips by the tournament's own group order.
+  const [finalized, setFinalized] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    api
+      .standings()
+      .then((d: any) => alive && setFinalized(finalizedGroupIds(d.groups || [])))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const finalizedGroups = useMemo(() => {
+    const done = new Set(finalized);
+    return tournament.groups.filter((g) => done.has(g.id)).map((g) => g.id);
+  }, [finalized, tournament.groups]);
   const pointsByRound = useMemo(
     () => Object.fromEntries(tournament.rounds.map((r) => [r.id, r.points])),
     [tournament.rounds]
@@ -248,6 +278,32 @@ export function Bracket({
               Final &amp; champion in the centre · both halves fan out to the Round of 32
             </span>
           </div>
+
+          {/* Finalized-groups indicator — derived live from ESPN. A group shows up
+              here once all its matches are played, so its qualifiers and order are
+              locked in. */}
+          {finalizedGroups.length > 0 && (
+            <div
+              className="mb-3 flex flex-wrap items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs dark:border-emerald-800/60 dark:bg-emerald-900/20"
+              title="Groups whose standings are locked from the live ESPN results — every match played, qualifiers and finishing order fixed."
+            >
+              <span className="font-semibold text-emerald-700 dark:text-emerald-300">✅ Groups finalized</span>
+              <span className="text-emerald-500/70 dark:text-emerald-400/70">(live)</span>
+              <span className="flex flex-wrap gap-1">
+                {finalizedGroups.map((id) => (
+                  <span
+                    key={id}
+                    className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[11px] font-bold text-white"
+                  >
+                    {id}
+                  </span>
+                ))}
+              </span>
+              <span className="text-emerald-600/70 dark:text-emerald-400/60">
+                {finalizedGroups.length}/{tournament.groups.length}
+              </span>
+            </div>
+          )}
           <div className="bracket-scroll">
             <div className="bracket bracket--mirror items-stretch">
               {/* LEFT half — builds rightward toward the centre */}
