@@ -1,5 +1,6 @@
 import type { Group, R32Match } from './types';
 import { R32_TEMPLATE } from './tournamentData';
+import { THIRD_PLACE_TABLE, THIRD_FACING_WINNERS } from './thirdPlaceTable';
 
 // Resolves the real Round-of-32 bracket once the admin finalizes the group
 // stage. Inputs are the actual finishing order of each group and which 8 of the
@@ -27,20 +28,49 @@ function resolveFixedSlot(slot: string, standings: GroupStandings): string {
   return type === 'W' ? s.first : s.second;
 }
 
-/** Assign each advancing third to a 'T' slot such that no third meets a team
- *  from its own group in the Round of 32. Backtracks for a conflict-free
- *  matching; falls back to in-order if none exists. */
+/** Assign each advancing third to a 'T' slot.
+ *
+ *  Primary path is the official FIFA 2026 third-place combination table
+ *  ([thirdPlaceTable.ts](./thirdPlaceTable.ts)): which eight of the twelve
+ *  groups' thirds qualify determines, for every third-facing group winner,
+ *  exactly which third it plays in the Round of 32. This isn't reducible to a
+ *  rule (FIFA published all 495 combinations in advance to avoid early-round
+ *  rematches), so we look it up.
+ *
+ *  If the set of advancing thirds isn't a recognised 8-group combination (e.g.
+ *  a partial/projected bracket with fewer than 8 distinct groups), we fall back
+ *  to a backtracking matching whose only constraint is that no third meets a
+ *  team from its own group; failing even that, original order.
+ *
+ *  @param slotWinnerGroups winner-group letter of each T slot, in template order
+ *         (the third-facing opponent of that slot — e.g. 'D' for the WD vs T slot).
+ *  @param thirds the advancing third-placed teams with their source group.
+ */
 function assignThirds(
-  forbiddenGroups: string[], // forbidden group per T slot (the opponent's group)
+  slotWinnerGroups: string[],
   thirds: Array<{ code: string; group: string }>
 ): string[] {
-  const out: string[] = new Array(forbiddenGroups.length).fill('');
-  const used = new Array(thirds.length).fill(false);
+  // Official FIFA lookup, keyed by the sorted set of advancing third groups.
+  const key = thirds.map((t) => t.group).filter(Boolean).sort().join('');
+  const packed = THIRD_PLACE_TABLE[key]; // third-group letter per THIRD_FACING_WINNERS slot
+  if (packed && packed.length === THIRD_FACING_WINNERS.length) {
+    const thirdGroupForWinner = new Map<string, string>();
+    THIRD_FACING_WINNERS.forEach((w, i) => thirdGroupForWinner.set(w, packed[i]));
+    const codeByGroup = new Map(thirds.map((t) => [t.group, t.code]));
+    const mapped = slotWinnerGroups.map((w) => {
+      const g = thirdGroupForWinner.get(w);
+      return (g && codeByGroup.get(g)) || '';
+    });
+    if (mapped.every(Boolean) && new Set(mapped).size === thirds.length) return mapped;
+  }
 
+  // Fallback: conflict-free greedy matching (no third meets its own group).
+  const out: string[] = new Array(slotWinnerGroups.length).fill('');
+  const used = new Array(thirds.length).fill(false);
   const solve = (slot: number): boolean => {
-    if (slot >= forbiddenGroups.length) return true;
+    if (slot >= slotWinnerGroups.length) return true;
     for (let i = 0; i < thirds.length; i++) {
-      if (used[i] || thirds[i].group === forbiddenGroups[slot]) continue;
+      if (used[i] || thirds[i].group === slotWinnerGroups[slot]) continue;
       used[i] = true;
       out[slot] = thirds[i].code;
       if (solve(slot + 1)) return true;
@@ -49,9 +79,8 @@ function assignThirds(
     }
     return false;
   };
-
   if (solve(0)) return out;
-  return thirds.map((t) => t.code); // fallback: original order
+  return thirds.map((t) => t.code); // last resort: original order
 }
 
 export function buildKnockout(
@@ -73,8 +102,9 @@ export function buildKnockout(
     if (m.b === 'T') return [{ id: m.id, opponent: m.a }];
     return [];
   });
-  const forbidden = tSlots.map((s) => s.opponent.slice(1)); // group letter of W</R<
-  const thirdByTSlot = assignThirds(forbidden, thirds);
+  // Each T slot's fixed opponent is a group WINNER ('W<g>'); take its group letter.
+  const slotWinnerGroups = tSlots.map((s) => s.opponent.slice(1));
+  const thirdByTSlot = assignThirds(slotWinnerGroups, thirds);
   const tQueue = [...thirdByTSlot];
 
   const r32: R32Match[] = R32_TEMPLATE.map((m) => ({
